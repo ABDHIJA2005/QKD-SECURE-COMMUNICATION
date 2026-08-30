@@ -24,7 +24,7 @@ from src.qrng import RandomBitSource
 from src.security import DEFAULT_QBER_THRESHOLD, SecurityDecision
 
 if TYPE_CHECKING:
-    from src.bb84 import BB84SimulationMetadata
+    from src.bb84 import BB84SimulationMetadata, BB84SimulationResult
 
 
 FILE_FORMAT_MAGIC = b"QFE1"
@@ -90,16 +90,23 @@ class FileEncryptionService:
         *,
         eve_enabled: bool = False,
         output_directory: str | Path | None = None,
+        bb84_result: BB84SimulationResult | None = None,
     ) -> FileEncryptionResult:
-        """Encrypt one file or return a structured BB84 security rejection."""
+        """Encrypt one file after an accepted BB84 run.
+
+        ``bb84_result`` may be supplied by a caller such as the UI to reuse a
+        recently displayed run. When omitted, the service performs its own
+        BB84 run as before.
+        """
         source_path = _require_regular_file(input_path)
         source_bytes = source_path.read_bytes()
-        simulation = BB84Simulation(
-            self._random_bit_source,
-            eve_enabled=eve_enabled,
-            qber_threshold=self._qber_threshold,
-        )
-        bb84_result = simulation.run(self._bb84_bit_count)
+        if bb84_result is None:
+            simulation = BB84Simulation(
+                self._random_bit_source,
+                eve_enabled=eve_enabled,
+                qber_threshold=self._qber_threshold,
+            )
+            bb84_result = simulation.run(self._bb84_bit_count)
         metadata = bb84_result.metadata
 
         if not metadata.security_decision.accepted:
