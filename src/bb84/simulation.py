@@ -82,6 +82,11 @@ class BB84SimulationResult:
     eve_interception: EveInterceptionResult | None
     metadata: BB84SimulationMetadata
 
+    @property
+    def alice_raw_bits(self) -> tuple[int, ...]:
+        """Alice's raw transmitted bits before basis sifting."""
+        return self.alice_bits
+
 
 class BB84Simulation:
     """Run the no-Eve, classical educational BB84 workflow.
